@@ -41,6 +41,9 @@ ARG TARGETARCH
 ARG TARGETVARIANT
 # - ROS
 ARG ROS_DISTRO
+ARG ROS_PKG=ros_base
+ENV ROS_PYTHON_VERSION=3
+ENV ROS_ROOT=/opt/ros/${ROS_DISTRO}
 
 # ROS info
 ENV ROS_DISTRO="${ROS_DISTRO}" \
@@ -86,6 +89,52 @@ RUN dt-apt-install ${PROJECT_PATH}/dependencies-apt.txt
 
 # install python3 dependencies
 ARG PIP_INDEX_URL="https://pypi.org/simple"
+
+# Install ROS
+RUN apt-key adv \
+    --keyserver hkp://keyserver.ubuntu.com:80 \
+    --recv-keys F42ED6FBAB17C654 \
+    && echo "deb http://packages.ros.org/ros2/ubuntu ${OS_DISTRO} main" >> /etc/apt/sources.list.d/ros.list
+
+
+# Install ROS
+
+# install ROS bootstrap dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+          libpython3-dev \
+          python3-rosdep \
+          python3-rosdep-modules \
+          python3-rosdistro \
+          python3-rosdistro-modules \
+          python3-rosinstall-generator \
+          python3-rospkg \
+          python3-rospkg-modules \
+          python3-catkin-pkg \
+          python3-vcstool \
+          build-essential && \
+    rosdep init && \
+    rosdep update && \
+    rm -rf /var/lib/apt/lists/*
+
+# Fix empy for ROS
+RUN ln -sf /usr/bin/empy3 /usr/bin/empy
+
+RUN pip3.8 list
+RUN pip3.8 install setuptools==45.2.0
+
+# download/build the ROS source
+RUN mkdir /tmp/ros_catkin_ws && \
+    cd /tmp/ros_catkin_ws && \
+    rosinstall_generator ${ROS_PKG} cv_bridge vision_msgs joy tf_conversions --rosdistro ${ROS_DISTRO} --deps --tar > ${ROS_DISTRO}-${ROS_PKG}.rosinstall && \
+    mkdir src && \
+    vcs import --input ${ROS_DISTRO}-${ROS_PKG}.rosinstall ./src && \
+    apt-get update && \
+    rosdep install --from-paths ./src --ignore-packages-from-source --rosdistro ${ROS_DISTRO} -y --skip-keys "python3-pykdl" && \
+    python3 ./src/catkin/bin/catkin_make_isolated --install --install-space ${ROS_ROOT} -DCMAKE_BUILD_TYPE=Release && \
+    rm -rf /var/lib/apt/lists/*
+
+
 ENV PIP_INDEX_URL=${PIP_INDEX_URL}
 COPY ./dependencies-py3.* "${PROJECT_PATH}/"
 RUN dt-pip3-install "${PROJECT_PATH}/dependencies-py3.*"

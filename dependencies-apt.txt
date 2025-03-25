@@ -4,12 +4,12 @@
 gfortran
 
 # ROS packages
-ros-noetic-rospy
-ros-noetic-robot
-ros-noetic-cv-bridge
-ros-noetic-image-transport
-ros-noetic-image-transport-plugins
-ros-noetic-tf-conversions
-ros-noetic-joy
-ros-noetic-mavros-msgs
-ros-noetic-opencv-apps
+#ros-noetic-rospy
+#ros-noetic-robot
+#ros-noetic-cv-bridge
+#ros-noetic-image-transport
+#ros-noetic-image-transport-plugins
+#ros-noetic-tf-conversions
+#ros-noetic-joy
+#ros-noetic-mavros-msgs
+#ros-noetic-opencv-apps
